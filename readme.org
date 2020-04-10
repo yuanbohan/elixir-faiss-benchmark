@@ -1,0 +1,10 @@
+#+OPTIONS: toc:nil date:nil timestamp:nil
+#+TITLE: Compare Performance in Elixir and FAISS
+#+AUTHOR: Yuanbo Han
+
+* TODO How To
+
+* References
+
+- [[https://github.com/facebookresearch/faiss][faiss]]
+- [[https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html][conda user guide]]
