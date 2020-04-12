@@ -2,7 +2,24 @@
 #+TITLE: Compare Performance in Elixir and FAISS
 #+AUTHOR: Yuanbo Han
 
-* TODO How To
+* DOING How To
+
+* Steps
+
+** generate data
+
+~python py/data.py~
+
+
+** check FAISS using python
+
+~python py/faiss_binary.py~
+
+
+** check elixir
+
+~cd faiss/~
+~mix run scripts/run.exs~
 
 * References
 
