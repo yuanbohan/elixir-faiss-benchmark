@@ -6,9 +6,9 @@ import numpy as np
 
 DEFAULT_NT = 1_000
 DEFAULT_NB = 1_000_000
-DEFAULT_NQ = 1 # search one vector
+DEFAULT_NQ = 5
 DEFAULT_D = 576
-DEFAULT_K = 5
+DEFAULT_K = 3
 
 
 class Data:

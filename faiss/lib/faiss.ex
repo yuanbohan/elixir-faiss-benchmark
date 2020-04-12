@@ -5,10 +5,10 @@ defmodule Faiss do
 
   @distance_threshold 5
 
+  @type group_id :: non_neg_integer()
   @type distance :: non_neg_integer()
-  @type video_id() :: binary()
-  @type cluster() :: [video_id()]
-  @type store() :: %{optional(video_id()) => [video_id()]}
+  @type video_id :: binary()
+  @type cluster :: %{optional(group_id()) => {video_id, [video_id()]}}
 
   @doc """
   convert comma seperated uint8 list to binary
@@ -38,10 +38,14 @@ defmodule Faiss do
 
   @spec load_all_dataset :: {[video_id()], [video_id()]}
   def load_all_dataset do
-    # xb = load_one_dataset("../xb.txt")
+    xb = load_one_dataset("../xb.txt")
+    IO.puts("load xb done")
     xq = load_one_dataset("../xq.txt")
+    IO.puts("load xq done")
+    {xb, xq}
 
-    {[<<1>>], xq}
+    # xq = load_one_dataset("../xq.txt")
+    # {[], xq}
   end
 
   @doc """
@@ -60,63 +64,137 @@ defmodule Faiss do
   end
 
   @doc """
+  find the group id where the video id will be inserted
+
+  ## Examples
+
+      iex> Faiss.find_group_id(%{}, <<1>>)
+      1
+      iex> Faiss.find_group_id(%{1 => {<<1>>, [<<1>>]}}, <<127>>)
+      2
+  """
+  @spec find_group_id(cluster(), video_id()) :: group_id()
+  def find_group_id(cluster, video_id) do
+    find_group_id(cluster, video_id, {1, :doing})
+  end
+
+  @doc """
+  find the group id
+
+  ## Examples
+
+      iex> Faiss.find_group_id(%{}, <<1>>, {1, :doing})
+      1
+      iex> Faiss.find_group_id(%{1=>{<<2>>,[<<2>>]}, 2=>{<<127>>,[<<127>>]}}, <<63>>,{1, :doing})
+      2
+  """
+  @spec find_group_id(cluster(), video_id(), {group_id(), atom()}) :: group_id()
+  defp find_group_id(cluster, video_id, {group_id, :doing}) do
+    val = Map.get(cluster, group_id)
+
+    case val do
+      nil ->
+        find_group_id(cluster, video_id, {group_id, :done})
+
+      {head_id, _} ->
+        cond do
+          hamming_distance(head_id, video_id) < @distance_threshold ->
+            find_group_id(cluster, video_id, {group_id, :done})
+
+          true ->
+            find_group_id(cluster, video_id, {group_id + 1, :doing})
+        end
+    end
+  end
+
+  defp find_group_id(_cluster, _video_id, {group_id, :done}), do: group_id
+
+  @doc """
   `cluster` store the group id, `map` store the clustered id
 
   # FIXME: the `Enum.reverse` may have a performance issue
 
   ## Examples
 
-      iex> Faiss.add({[], %{}}, <<1>>)
-      {[<<1>>], %{<<1>> => []}}
+      iex> Faiss.add(%{}, <<1>>)
+      %{1 => {<<1>>, [<<1>>]}}
 
-      iex> Faiss.add({[<<1>>], %{<<1>> => []}}, <<2>>)
-      {[<<1>>], %{<<1>> => [<<2>>]}}
+      iex> Faiss.add(%{1 => {<<1>>, [<<1>>]}}, <<1>>)
+      %{1 => {<<1>>, [<<1>>]}}
+
+      iex(11)> Faiss.add(%{1 => {<<1>>, [<<1>>]}}, <<127>>)
+      %{1 => {<<1>>, [<<1>>]}, 2 => {"\d", ["\d"]}}
 
   """
-  @spec add({cluster(), store()}, video_id()) :: {cluster(), store()}
-  def add({cluster, store}, video_id) do
-    exist_group_id =
-      cluster
-      |> Enum.reverse()
-      |> Enum.find(fn group_id -> hamming_distance(group_id, video_id) < @distance_threshold end)
+  @spec add(cluster(), video_id()) :: cluster()
+  def add(cluster, video_id) do
+    group_id = find_group_id(cluster, video_id)
 
-    case exist_group_id do
-      nil -> {[video_id | cluster], Map.put(store, video_id, [])}
-      _ -> {cluster, Map.update(store, exist_group_id, [], &[video_id | &1])}
+    if rem(group_id, 100) == 0 do
+      IO.puts("indexind: add #{group_id}")
+    end
+
+    case Map.get(cluster, group_id) do
+      nil ->
+        Map.put(cluster, group_id, {video_id, [video_id]})
+
+      {head_id, video_ids} ->
+        Map.put(cluster, group_id, {head_id, Enum.uniq([video_id | video_ids])})
     end
   end
 
   @doc """
   cluster the dataset based on hammind distance
 
-  NOTE: the result cluster MUST be reversed before search.
+  ## Examples
+
+      iex> Faiss.index([<<1>>, <<127>>, <<63>>, <<31>>, <<15>>, <<7>>, <<3>>])
+      %{1 => {<<1>>, [<<3>>, <<7>>, <<15>>, <<31>>, <<1>>]}, 2 => {<<127>>, [<<63>>, <<127>>]}}
+
   """
-  @spec index([video_id()]) :: {cluster(), store()}
+  @spec index([video_id()]) :: cluster()
   def index(dataset) do
-    Enum.reduce(dataset, {[], %{}}, fn video_id, acc -> add(acc, video_id) end)
+    Enum.reduce(dataset, %{}, fn video_id, acc -> add(acc, video_id) end)
   end
+
+  @doc """
+  search the group id where the minist hamming distance located
+
+  # TODO: add result_distance in terms of performance
+  """
+  defp search_group_id(cluster, video_id, {group_id, :doing, result_id, result_dis}) do
+    case Map.get(cluster, group_id) do
+      nil ->
+        search_group_id(cluster, video_id, {group_id, :done, result_id, result_dis})
+
+      {head_id, _} ->
+        cur_dis = hamming_distance(head_id, video_id)
+
+        cond do
+          cur_dis < @distance_threshold ->
+            search_group_id(cluster, video_id, {group_id, :done, group_id, cur_dis})
+
+          cur_dis < result_dis ->
+            search_group_id(cluster, video_id, {group_id + 1, :doing, group_id, cur_dis})
+
+          true ->
+            search_group_id(cluster, video_id, {group_id + 1, :doing, result_id, result_dis})
+        end
+    end
+  end
+
+  defp search_group_id(_cluster, _video_id, {_, :done, result_id, _}), do: result_id
 
   @doc """
   find the video_id which has shortest hamming distance with the `video_id`
 
-  Assume:
-
-  - the `cluster` is already reversed
-  - the `cluster` is not empty
+  Assume: the `cluster` is not empty, which means `cluster` contains `1` key
 
   """
-  @spec search({cluster(), store()}, video_id()) :: video_id()
-  def search({cluster, store}, target_id) do
-    group_id =
-      Enum.reduce(cluster, fn group_id, acc ->
-        if hamming_distance(group_id, target_id) < hamming_distance(acc, target_id) do
-          group_id
-        else
-          acc
-        end
-      end)
-
-    group_videos = [group_id | Map.get(store, group_id, [])]
-    Enum.min_by(group_videos, fn video_id -> hamming_distance(video_id, target_id) end)
+  @spec search(cluster(), video_id()) :: video_id()
+  def search(cluster, target_id) do
+    group_id = search_group_id(cluster, target_id, {1, :doing, 1, :inf})
+    {_, group_video_ids} = Map.get(cluster, group_id, [])
+    Enum.min_by(group_video_ids, fn video_id -> hamming_distance(video_id, target_id) end)
   end
 end
