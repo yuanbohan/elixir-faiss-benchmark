@@ -18,6 +18,8 @@ class FaissBinaryIndex:
         D, I = index.search(self.data.xq, self.data.k)
         print(D)
         print(I)
+        print(I[0])
+        print(self.data.xb[I[0]])
 
     def ivf_flat(self):
         print("start: benchmark faiss BinaryIVF performance")
