@@ -22,7 +22,7 @@ defmodule Faiss do
   @spec line_to_binary(String.t()) :: video_id()
   def line_to_binary(line) do
     l = line |> String.split(",") |> Enum.map(&String.to_integer/1)
-    for x <- l, into: "", do: <<x>>
+    for x <- l, into: <<>>, do: <<x>>
   end
 
   @doc """
@@ -112,8 +112,6 @@ defmodule Faiss do
   @doc """
   `cluster` store the group id, `map` store the clustered id
 
-  # FIXME: the `Enum.reverse` may have a performance issue
-
   ## Examples
 
       iex> Faiss.add(%{}, <<1>>)
@@ -130,9 +128,9 @@ defmodule Faiss do
   def add(cluster, video_id) do
     group_id = find_group_id(cluster, video_id)
 
-    if rem(group_id, 100) == 0 do
-      IO.puts("indexind: add #{group_id}")
-    end
+    # if rem(group_id, 100) == 0 do
+    #   IO.puts("indexind: add #{group_id}")
+    # end
 
     case Map.get(cluster, group_id) do
       nil ->
@@ -160,7 +158,6 @@ defmodule Faiss do
   @doc """
   search the group id where the minist hamming distance located
 
-  # TODO: add result_distance in terms of performance
   """
   defp search_group_id(cluster, video_id, {group_id, :doing, result_id, result_dis}) do
     case Map.get(cluster, group_id) do

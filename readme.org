@@ -21,6 +21,32 @@
 ~cd faiss/~
 ~mix run scripts/run.exs~
 
+* Benchmark
+
+** python
+
+1_000_000 dataset, query 5 vector with 3 neighbors
+
+#+BEGIN_SRC shell
+  start: load dataset from disk!
+  done: load dataset xt: (1000, 72), xb: (1000000, 72), xq: (5, 72) from disk!
+  dataset: xb: (1000000, 72), xq: (5, 72)
+  start: benchmark faiss BinaryFlat Index performance
+  end: BinaryFlat Index consumes: 0.0661 (s)
+  start: benchmark faiss BinaryFlat Search performance
+  end: BinaryFlat Search consumes: 0.0121 (s)
+#+END_SRC
+
+** elixir
+
+#+BEGIN_SRC shell
+  start: Elixir index 1000 dataset
+  end: Elixir index consumes 6.690596 (s)
+  start: Elixir search
+  end: Elixir search consumes 0.013694 (s)
+#+END_SRC
+
+
 * References
 
 - [[https://github.com/facebookresearch/faiss][faiss]]

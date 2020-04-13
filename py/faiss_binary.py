@@ -3,8 +3,11 @@ using binary index with hamming distance
 """
 
 from sys import argv
-import faiss
 from data import Data
+import faiss
+import time
+
+TIMES = 100
 
 
 class FaissBinaryIndex:
@@ -12,14 +15,36 @@ class FaissBinaryIndex:
         self.data = data
 
     def flat(self):
-        print("start: benchmark faiss BinaryFlat performance")
+        print("dataset: xb: %s, xq: %s" %
+              (self.data.xb.shape, self.data.xq.shape))
+
+        print("start: benchmark faiss BinaryFlat Index performance")
+        start = time.time()
+        for _x in range(TIMES):
+            index = faiss.IndexBinaryFlat(self.data.d)
+            index.add(self.data.xb)
+        end = time.time()
+        print("end: BinaryFlat Index consumes: %.4f (s)" %
+              ((end - start) / 100))
+
         index = faiss.IndexBinaryFlat(self.data.d)
         index.add(self.data.xb)
-        D, I = index.search(self.data.xq, self.data.k)
-        print(D)
-        print(I)
-        print(I[0])
-        print(self.data.xb[I[0]])
+
+        print("start: benchmark faiss BinaryFlat Search performance")
+        start = time.time()
+        for _x in range(TIMES):
+            index.search(self.data.xq, self.data.k)
+        end = time.time()
+        print("end: BinaryFlat Search consumes: %.4f (s)" %
+              ((end - start) / 100))
+
+        # index = faiss.IndexBinaryFlat(self.data.d)
+        # index.add(self.data.xb)
+        # D, I = index.search(self.data.xq, self.data.k)
+        # print(D)
+        # print(I)
+        # print(I[0])
+        # print(self.data.xb[I[0]])
 
     def ivf_flat(self):
         print("start: benchmark faiss BinaryIVF performance")

@@ -5,7 +5,7 @@ save and load dataset
 import numpy as np
 
 DEFAULT_NT = 1_000
-DEFAULT_NB = 2_000
+DEFAULT_NB = 1_000_000
 DEFAULT_NQ = 5
 DEFAULT_D = 576
 DEFAULT_K = 3
