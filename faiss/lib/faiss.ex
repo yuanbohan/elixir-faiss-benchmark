@@ -59,6 +59,10 @@ defmodule Faiss do
   """
   @spec hamming_distance(video_id(), video_id()) :: distance()
   def hamming_distance(video_id1, video_id2) do
+    # if using smaller bits, the performance greatly improved
+    # <<bits1, _rest::binary>> = video_id1
+    # <<bits2, _rest::binary>> = video_id2
+    # bits = :crypto.exor(<<bits1>>, <<bits2>>)
     bits = :crypto.exor(video_id1, video_id2)
     for(<<bit::1 <- bits>>, do: bit) |> Enum.sum()
   end
