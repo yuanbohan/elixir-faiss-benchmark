@@ -2,26 +2,37 @@
 #+TITLE: Compare Performance in Elixir and FAISS
 #+AUTHOR: Yuanbo Han
 
-* DOING How To
+* How To
 
-* Steps
+** prepare python env
 
-** generate data
+- install python3 and [[https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html][conda]] // python2 is not tested
+- ~conda create --name faiss~ and ~conda activate faiss~
+- ~conda install numpy~
+- ~conda install faiss-cpu -c pytorch~
 
-~python py/data.py~
+** prepare elixir env
 
+- install elixir
 
-** check FAISS using python
+** python script
 
-~python py/faiss_binary.py~
+- ~python py/data.py 1000000~
+- ~python py/faiss_binary.py~
 
+** elixir scritp
 
-** check elixir
+*** 1000 dataset
 
-~cd faiss/~
-~mix run scripts/run.exs~
+- ~python py/data.py 1000~
+- ~cd faiss/~ and ~mix run scripts/run.exs~
 
-* Benchmark
+*** 5000 dataset
+
+- ~python py/data.py 5000~
+- ~cd faiss/~ and ~mix run scripts/run.exs~
+
+* Result
 
 ** python
 
@@ -39,15 +50,21 @@
 
 ** elixir
 
+1_000 and 5_000 dataset, query 1 vector without neighbors
+
 #+BEGIN_SRC shell
   start: Elixir index 1000 dataset
   end: Elixir index consumes 6.690596 (s)
   start: Elixir search
   end: Elixir search consumes 0.013694 (s)
-#+END_SRC
 
+  start: Elixir index 5000 dataset
+  end: Elixir index consumes 163.064223 (s)
+  start: Elixir search
+  end: Elixir search consumes 0.066707 (s)
+#+END_SRC
 
 * References
 
 - [[https://github.com/facebookresearch/faiss][faiss]]
-- [[https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html][conda user guide]]
+- [[https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html][conda]]

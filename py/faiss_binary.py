@@ -25,7 +25,7 @@ class FaissBinaryIndex:
             index.add(self.data.xb)
         end = time.time()
         print("end: BinaryFlat Index consumes: %.4f (s)" %
-              ((end - start) / 100))
+              ((end - start) / TIMES))
 
         index = faiss.IndexBinaryFlat(self.data.d)
         index.add(self.data.xb)
@@ -36,7 +36,7 @@ class FaissBinaryIndex:
             index.search(self.data.xq, self.data.k)
         end = time.time()
         print("end: BinaryFlat Search consumes: %.4f (s)" %
-              ((end - start) / 100))
+              ((end - start) / TIMES))
 
         # index = faiss.IndexBinaryFlat(self.data.d)
         # index.add(self.data.xb)

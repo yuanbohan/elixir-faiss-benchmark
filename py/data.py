@@ -2,6 +2,7 @@
 save and load dataset
 """
 
+from sys import argv
 import numpy as np
 
 DEFAULT_NT = 1_000
@@ -66,5 +67,9 @@ class Data:
 
 
 if __name__ == '__main__':
-    data = Data()
+    nb = 1_000_000
+    if len(argv) == 2:
+        nb = int(argv[1])
+
+    data = Data(nb = nb)
     data.save_dataset()
